@@ -49,7 +49,7 @@ export default function ManageRequests() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Manage Part Requests</h1>
+      <h1 className="text-3xl font-bold mb-8 text-lego-textred">Manage Part Requests</h1>
 
       {/* Filter Tabs */}
       <div className="flex space-x-4 mb-6 border-b">
@@ -57,7 +57,7 @@ export default function ManageRequests() {
           onClick={() => setFilter('submitted')}
           className={`pb-3 px-4 font-medium transition-colors ${
             filter === 'submitted'
-              ? 'border-b-2 border-primary-600 text-primary-600'
+              ? 'border-b-2 border-lego-red text-lego-textred'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
@@ -67,7 +67,7 @@ export default function ManageRequests() {
           onClick={() => setFilter('approved')}
           className={`pb-3 px-4 font-medium transition-colors ${
             filter === 'approved'
-              ? 'border-b-2 border-primary-600 text-primary-600'
+              ? 'border-b-2 border-lego-red text-lego-textred'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
@@ -77,7 +77,7 @@ export default function ManageRequests() {
           onClick={() => setFilter('rejected')}
           className={`pb-3 px-4 font-medium transition-colors ${
             filter === 'rejected'
-              ? 'border-b-2 border-primary-600 text-primary-600'
+              ? 'border-b-2 border-lego-red text-lego-textred'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
@@ -87,7 +87,7 @@ export default function ManageRequests() {
           onClick={() => setFilter('all')}
           className={`pb-3 px-4 font-medium transition-colors ${
             filter === 'all'
-              ? 'border-b-2 border-primary-600 text-primary-600'
+              ? 'border-b-2 border-lego-red text-lego-textred'
               : 'text-gray-600 hover:text-gray-900'
           }`}
         >
@@ -104,6 +104,17 @@ export default function ManageRequests() {
         ) : (
           requests.map((request) => (
             <div key={request._id} className="card">
+              {/* Image Preview - Small */}
+              {request.image_urls && request.image_urls.length > 0 && (
+                <div className="mb-4">
+                  <img
+                    src={request.image_urls[0]}
+                    alt={request.name}
+                    className="w-full h-48 object-cover rounded-lg"
+                  />
+                </div>
+              )}
+
               <div className="flex items-start justify-between mb-4">
                 <div className="flex-1">
                   <h3 className="font-bold text-lg mb-1">{request.name}</h3>
@@ -172,9 +183,26 @@ export default function ManageRequests() {
       {/* Review Modal */}
       {selectedRequest && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto p-6">
-            <h2 className="text-2xl font-bold mb-4">Review Request</h2>
+          <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <h2 className="text-2xl font-bold mb-4 text-lego-textred">Review Request</h2>
             
+            {/* Images Gallery */}
+            {selectedRequest.image_urls && selectedRequest.image_urls.length > 0 && (
+              <div className="mb-6">
+                <h3 className="font-bold mb-2">Images:</h3>
+                <div className="grid grid-cols-2 gap-4">
+                  {selectedRequest.image_urls.map((url, idx) => (
+                    <img
+                      key={idx}
+                      src={url}
+                      alt={`${selectedRequest.name} ${idx + 1}`}
+                      className="w-full h-64 object-cover rounded-lg border-2 border-gray-200"
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="mb-4">
               <h3 className="font-bold text-lg">{selectedRequest.name}</h3>
               {selectedRequest.part_code && (
@@ -210,7 +238,7 @@ export default function ManageRequests() {
             )}
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-lego-textred mb-2">
                 Admin Comment
               </label>
               <textarea

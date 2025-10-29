@@ -1,18 +1,20 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload } from 'lucide-react';
+import { Upload, X } from 'lucide-react';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
 
 export default function SubmitRequest() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     part_code: '',
     category: '',
     description: '',
-    color_variants: [{ name: '', code: '' }]
+    color_variants: [{ name: '', code: '' }],
+    image_urls: [],
   });
 
   const handleChange = (e) => {
@@ -28,7 +30,7 @@ export default function SubmitRequest() {
   const addColor = () => {
     setFormData({
       ...formData,
-      color_variants: [...formData.color_variants, { name: '', code: '' }]
+      color_variants: [...formData.color_variants, { name: '', code: '' }],
     });
   };
 
@@ -37,19 +39,49 @@ export default function SubmitRequest() {
     setFormData({ ...formData, color_variants: newColors });
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const { data } = await api.post('/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      setFormData(prev => ({
+        ...prev,
+        image_urls: [...prev.image_urls, data.url]
+      }));
+
+      toast.success('Image uploaded!');
+    } catch (error) {
+      toast.error('Failed to upload image');
+    }
+    setUploading(false);
+    e.target.value = ''; // Reset input
+  };
+
+  const removeImage = (index) => {
+    const newImages = formData.image_urls.filter((_, i) => i !== index);
+    setFormData({ ...formData, image_urls: newImages });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      // Filter out empty color variants
       const cleanedData = {
         ...formData,
-        color_variants: formData.color_variants.filter(c => c.name)
+        color_variants: formData.color_variants.filter(c => c.name),
       };
 
       await api.post('/requests', cleanedData);
-      toast.success('Request submitted successfully! An admin will review it soon.');
+      toast.success('Request submitted successfully!');
       navigate('/my-contributions');
     } catch (error) {
       console.error('Failed to submit request');
@@ -60,7 +92,7 @@ export default function SubmitRequest() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Submit New Part Request</h1>
+        <h1 className="text-3xl font-bold mb-2 text-lego-textred">Submit New Part Request</h1>
         <p className="text-gray-600">
           Found a brick that's not in our database? Submit it for review by our admin team.
         </p>
@@ -70,7 +102,7 @@ export default function SubmitRequest() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Part Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-lego-textred mb-2">
               Part Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -86,7 +118,7 @@ export default function SubmitRequest() {
 
           {/* Part Code */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-lego-textred mb-2">
               Part Code (Optional)
             </label>
             <input
@@ -97,14 +129,11 @@ export default function SubmitRequest() {
               className="input"
               placeholder="e.g., 3001"
             />
-            <p className="text-sm text-gray-500 mt-1">
-              If known, enter the official LEGO part number
-            </p>
           </div>
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-lego-textred mb-2">
               Category
             </label>
             <select
@@ -126,7 +155,7 @@ export default function SubmitRequest() {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-lego-textred mb-2">
               Description
             </label>
             <textarea
@@ -135,13 +164,55 @@ export default function SubmitRequest() {
               onChange={handleChange}
               className="input"
               rows={4}
-              placeholder="Describe the part, where you found it, any unique characteristics..."
+              placeholder="Describe the part..."
             />
+          </div>
+
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-lego-textred mb-2">
+              Images
+            </label>
+            
+            {/* Upload Button */}
+            <label className="btn btn-secondary cursor-pointer inline-flex items-center space-x-2">
+              <Upload size={18} />
+              <span>{uploading ? 'Uploading...' : 'Upload Image'}</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                disabled={uploading}
+              />
+            </label>
+
+            {/* Uploaded Images Preview */}
+            {formData.image_urls.length > 0 && (
+              <div className="grid grid-cols-3 gap-4 mt-4">
+                {formData.image_urls.map((url, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={url}
+                      alt={`Upload ${index + 1}`}
+                      className="w-full aspect-square object-cover rounded-lg border-2 border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Color Variants */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-lego-textred mb-2">
               Color Variants
             </label>
             {formData.color_variants.map((color, index) => (
@@ -171,21 +242,16 @@ export default function SubmitRequest() {
                 )}
               </div>
             ))}
-            <button
-              type="button"
-              onClick={addColor}
-              className="btn btn-secondary mt-2"
-            >
+            <button type="button" onClick={addColor} className="btn btn-secondary mt-2">
               + Add Color
             </button>
           </div>
-
 
           {/* Submit Button */}
           <div className="flex space-x-4">
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || uploading}
               className="btn btn-primary disabled:opacity-50"
             >
               {loading ? 'Submitting...' : 'Submit Request'}

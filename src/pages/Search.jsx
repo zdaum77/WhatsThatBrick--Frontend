@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { Search as SearchIcon } from 'lucide-react';
 import api from '../api/axios';
 import BrickList from '../components/bricks/BrickList';
 import BrickFilters from '../components/bricks/BrickFilters';
@@ -10,12 +11,26 @@ export default function Search() {
   const [bricks, setBricks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [pagination, setPagination] = useState({ page: 1, total: 0, pages: 0 });
+  const [searchText, setSearchText] = useState(searchParams.get('q') || '');
   const [filters, setFilters] = useState({
     q: searchParams.get('q') || '',
     category: searchParams.get('category') || '',
     color: searchParams.get('color') || '',
     sort: searchParams.get('sort') || '-createdAt'
   });
+
+  // Update filters when URL changes (from navbar search)
+  useEffect(() => {
+    const newFilters = {
+      q: searchParams.get('q') || '',
+      category: searchParams.get('category') || '',
+      color: searchParams.get('color') || '',
+      sort: searchParams.get('sort') || '-createdAt'
+    };
+    setFilters(newFilters);
+    setSearchText(searchParams.get('q') || '');
+    setPagination({ page: 1, total: 0, pages: 0 });
+  }, [searchParams]);
 
   useEffect(() => {
     loadBricks();
@@ -50,6 +65,7 @@ export default function Search() {
 
   const handleFilterChange = (newFilters) => {
     setFilters(newFilters);
+    setSearchText(newFilters.q || '');
     setPagination({ ...pagination, page: 1 });
     
     // Update URL params
@@ -58,6 +74,11 @@ export default function Search() {
       if (newFilters[key]) params.set(key, newFilters[key]);
     });
     setSearchParams(params);
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    handleFilterChange({ ...filters, q: searchText });
   };
 
   const handlePageChange = (page) => {
@@ -70,11 +91,11 @@ export default function Search() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold mb-2 text-lego-textred">Browse Catalog</h1>
         <p className="text-gray-600">
-          Explore the {pagination.total.toLocaleString()} LEGO parts in our database
+          Explore {pagination.total.toLocaleString()} LEGO parts in our database
         </p>
       </div>
 
-      {/* THIS IS THE FILTERS COMPONENT */}
+    
       <BrickFilters filters={filters} onFilterChange={handleFilterChange} />
       
       <BrickList bricks={bricks} loading={loading} />

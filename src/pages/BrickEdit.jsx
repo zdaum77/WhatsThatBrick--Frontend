@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Upload, X } from 'lucide-react';
 import api from '../api/axios';
 import { toast } from 'react-toastify';
 import Loading from '../components/common/Loading';
@@ -9,13 +10,14 @@ export default function BrickEdit() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     part_code: '',
     category: '',
     description: '',
     color_variants: [{ name: '', code: '' }],
-    image_urls: [''],
+    image_urls: [],
     set_appearances: [],
   });
 
@@ -32,7 +34,7 @@ export default function BrickEdit() {
         category: data.category || '',
         description: data.description || '',
         color_variants: data.color_variants?.length > 0 ? data.color_variants : [{ name: '', code: '' }],
-        image_urls: data.image_urls?.length > 0 ? data.image_urls : [''],
+        image_urls: data.image_urls || [],
         set_appearances: data.set_appearances || [],
       });
     } catch (error) {
@@ -64,14 +66,30 @@ export default function BrickEdit() {
     setFormData({ ...formData, color_variants: newColors });
   };
 
-  const handleImageChange = (index, value) => {
-    const newImages = [...formData.image_urls];
-    newImages[index] = value;
-    setFormData({ ...formData, image_urls: newImages });
-  };
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
 
-  const addImage = () => {
-    setFormData({ ...formData, image_urls: [...formData.image_urls, ''] });
+    setUploading(true);
+    try {
+      const uploadFormData = new FormData();
+      uploadFormData.append('image', file);
+
+      const { data } = await api.post('/upload', uploadFormData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      setFormData(prev => ({
+        ...prev,
+        image_urls: [...prev.image_urls, data.url]
+      }));
+
+      toast.success('Image uploaded!');
+    } catch (error) {
+      toast.error('Failed to upload image');
+    }
+    setUploading(false);
+    e.target.value = '';
   };
 
   const removeImage = (index) => {
@@ -87,7 +105,6 @@ export default function BrickEdit() {
       const cleanedData = {
         ...formData,
         color_variants: formData.color_variants.filter(c => c.name),
-        image_urls: formData.image_urls.filter(url => url.trim() !== ''),
       };
 
       await api.put(`/bricks/${id}`, cleanedData);
@@ -104,7 +121,7 @@ export default function BrickEdit() {
   return (
     <div className="container mx-auto px-4 py-8 max-w-3xl">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Edit Brick</h1>
+        <h1 className="text-3xl font-bold mb-2 text-lego-textred">Edit Brick</h1>
         <p className="text-gray-600">Update the information for this brick</p>
       </div>
 
@@ -112,7 +129,7 @@ export default function BrickEdit() {
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-lego-textred mb-2">
               Part Name <span className="text-red-500">*</span>
             </label>
             <input
@@ -127,7 +144,7 @@ export default function BrickEdit() {
 
           {/* Part Code */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-lego-textred mb-2">
               Part Code
             </label>
             <input
@@ -141,7 +158,7 @@ export default function BrickEdit() {
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-lego-textred mb-2">
               Category
             </label>
             <select
@@ -163,7 +180,7 @@ export default function BrickEdit() {
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-lego-textred mb-2">
               Description
             </label>
             <textarea
@@ -175,9 +192,51 @@ export default function BrickEdit() {
             />
           </div>
 
+          {/* Image Upload */}
+          <div>
+            <label className="block text-sm font-medium text-lego-textred mb-2">
+              Images
+            </label>
+            
+            {/* Upload Button */}
+            <label className="btn btn-secondary cursor-pointer inline-flex items-center space-x-2">
+              <Upload size={18} />
+              <span>{uploading ? 'Uploading...' : 'Upload Image'}</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                disabled={uploading}
+              />
+            </label>
+
+            {/* Uploaded Images Preview */}
+            {formData.image_urls.length > 0 && (
+              <div className="grid grid-cols-3 gap-4 mt-4">
+                {formData.image_urls.map((url, index) => (
+                  <div key={index} className="relative group">
+                    <img
+                      src={url}
+                      alt={`Upload ${index + 1}`}
+                      className="w-full aspect-square object-cover rounded-lg border-2 border-gray-200"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(index)}
+                      className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X size={16} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Color Variants */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
+            <label className="block text-sm font-medium text-lego-textred mb-2">
               Color Variants
             </label>
             {formData.color_variants.map((color, index) => (
@@ -212,41 +271,11 @@ export default function BrickEdit() {
             </button>
           </div>
 
-          {/* Image URLs */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Image URLs
-            </label>
-            {formData.image_urls.map((url, index) => (
-              <div key={index} className="flex space-x-2 mb-2">
-                <input
-                  type="url"
-                  placeholder="https://example.com/image.jpg"
-                  value={url}
-                  onChange={(e) => handleImageChange(index, e.target.value)}
-                  className="input flex-1"
-                />
-                {formData.image_urls.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeImage(index)}
-                    className="btn btn-danger"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-            ))}
-            <button type="button" onClick={addImage} className="btn btn-secondary mt-2">
-              + Add Image URL
-            </button>
-          </div>
-
           {/* Submit */}
           <div className="flex space-x-4">
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || uploading}
               className="btn btn-primary disabled:opacity-50"
             >
               {saving ? 'Saving...' : 'Save Changes'}

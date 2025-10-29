@@ -1,13 +1,18 @@
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
+const API_URL = import.meta.env.DEV
+  ? "http://localhost:4000/api"
+  : "https://b15-yourdomainname.mak3r.dev/api";  // Change yourdomainname!
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api',
+  baseURL: API_URL,
   headers: {
     'Content-Type': 'application/json'
   }
 });
 
+// Rest of your interceptors stay the same...
 // Request interceptor - add auth token
 api.interceptors.request.use(
   (config) => {

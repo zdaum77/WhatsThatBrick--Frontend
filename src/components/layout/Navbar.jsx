@@ -54,9 +54,10 @@ export default function Navbar() {
               <input
                 type="text"
                 placeholder="Search bricks..."
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                onKeyPress={(e) => {
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-lego-red focus:border-transparent"
+                onKeyDown={(e) => {
                   if (e.key === "Enter" && e.target.value) {
+                    e.preventDefault();
                     navigate(`/search?q=${e.target.value}`);
                   }
                 }}
@@ -147,10 +148,7 @@ export default function Navbar() {
               </>
             ) : (
               <>
-                <Link
-                  to="/login"
-                  className="text-white hover:text-orange-200"
-                >
+                <Link to="/login" className="text-white hover:text-orange-200">
                   Login
                 </Link>
                 <Link to="/register" className="btn btn-primary">
