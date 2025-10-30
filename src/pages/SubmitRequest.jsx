@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Upload, X } from 'lucide-react';
@@ -45,11 +46,15 @@ export default function SubmitRequest() {
 
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('image', file);
+      const token = localStorage.getItem('token'); // <- get JWT token from storage
+      const formDataObj = new FormData();
+      formDataObj.append('image', file);
 
-      const { data } = await api.post('/upload', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const { data } = await api.post('/upload', formDataObj, {
+        headers: { 
+          'Content-Type': 'multipart/form-data',
+          Authorization: `Bearer ${token}` // <- include JWT in header
+        },
       });
 
       setFormData(prev => ({
@@ -59,6 +64,7 @@ export default function SubmitRequest() {
 
       toast.success('Image uploaded!');
     } catch (error) {
+      console.error(error);
       toast.error('Failed to upload image');
     }
     setUploading(false);
