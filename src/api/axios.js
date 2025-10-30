@@ -3,7 +3,7 @@ import { toast } from 'react-toastify';
 
 const API_URL = import.meta.env.DEV
   ? "http://localhost:4000/api"
-  : "https://b15-yourdomainname.mak3r.dev/api";  // Change yourdomainname!
+  : "https://b15-muadz.mak3r.dev/api";
 
 const api = axios.create({
   baseURL: API_URL,
